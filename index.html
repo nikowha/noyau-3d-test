@@ -25,7 +25,7 @@
     </form>
   </div>
   <script type="module">
-    const STORED_KEY = 'testAccessKey';
+    const STORED_KEY = 'modelerAccessKey';
     const elementById = (id) => document.getElementById(id);
     const fromBase64 = (text) => Uint8Array.from(atob(text), (letter) => letter.charCodeAt(0));
     const toBase64 = (bytes) => btoa(String.fromCharCode(...bytes));
@@ -58,9 +58,9 @@
     function serveFilesFromMemory(files) {
       const networkFetch = window.fetch.bind(window);
       window.fetch = (input, options) => {
-        const name = new URL(typeof input === 'string' ? input : input.url, location.href).pathname.replace(/^.*\/(build|reference)\//, '/$1/');
+        const name = new URL(typeof input === 'string' ? input : input.url, location.href).pathname.split('/').pop();
         if (!files[name]) return networkFetch(input, options);
-        const type = name.endsWith('.wasm') ? 'application/wasm' : 'application/json';
+        const type = name.endsWith('.wasm') ? 'application/wasm' : 'text/javascript';
         return Promise.resolve(new Response(files[name], { headers: { 'Content-Type': type } }));
       };
     }
@@ -72,7 +72,6 @@
       document.head.querySelectorAll('style').forEach((style) => style.remove());
       document.head.append(...page.head.querySelectorAll('style'));
       document.body.replaceChildren(...page.body.childNodes);
-      globalThis.kernelBaseUrl = new URL('build/bevel.mjs', location.href).href;
       serveFilesFromMemory(files);
       await import(URL.createObjectURL(new Blob([files['app.js']], { type: 'text/javascript' })));
     }
